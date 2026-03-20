@@ -93,6 +93,7 @@
 
     <script>
       const STORAGE_KEY = "codex_url_list";
+      const STORAGE_INIT_KEY = "codex_url_list_initialized_v2";
       const DEFAULT_ITEMS = [
         { title: "ノートアプリ", url: "https://ny-note.vercel.app" },
         {
@@ -108,30 +109,57 @@
       const titleInputEl = document.getElementById("title");
       const urlInputEl = document.getElementById("url");
 
-      function loadItems() {
-        const defaultItems = DEFAULT_ITEMS.map((item) => ({ ...item }));
+      function normalizeItems(parsed) {
+        if (Array.isArray(parsed)) {
+          return parsed.filter((item) => item && item.title && item.url);
+        }
 
+        // 互換対応: 以前の実装で単体オブジェクトが保存されていても配列へ変換する
+        if (parsed && typeof parsed === "object" && parsed.title && parsed.url) {
+          return [parsed];
+        }
+
+        return [];
+      }
+
+      function mergeDefaults(items) {
+        const byUrl = new Map();
+
+        items.forEach((item) => {
+          byUrl.set(item.url, { ...item });
+        });
+
+        DEFAULT_ITEMS.forEach((item) => {
+          if (!byUrl.has(item.url)) {
+            byUrl.set(item.url, { ...item });
+          }
+        });
+
+        return Array.from(byUrl.values());
+      }
+
+      function loadItems() {
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
           if (!raw) {
-            return defaultItems;
+            return mergeDefaults([]);
           }
 
-          const parsed = JSON.parse(raw);
-
-          // 互換対応: 以前の実装で単体オブジェクトが保存されていても配列へ変換する
-          if (Array.isArray(parsed)) {
-            return parsed;
-          }
-
-          if (parsed && typeof parsed === "object" && parsed.title && parsed.url) {
-            return [parsed];
-          }
-
-          return defaultItems;
+          return normalizeItems(JSON.parse(raw));
         } catch {
-          return defaultItems;
+          return mergeDefaults([]);
         }
+      }
+
+      function ensureDefaultsInitialized() {
+        const initialized = localStorage.getItem(STORAGE_INIT_KEY);
+        if (initialized) {
+          return;
+        }
+
+        const merged = mergeDefaults(loadItems());
+        saveItems(merged);
+        localStorage.setItem(STORAGE_INIT_KEY, "1");
       }
 
       function saveItems(items) {
@@ -189,6 +217,7 @@
         render();
       });
 
+      ensureDefaultsInitialized();
       render();
     </script>
   </body>
