@@ -93,6 +93,14 @@
 
     <script>
       const STORAGE_KEY = "codex_url_list";
+      const DEFAULT_ITEMS = [
+        { title: "ノートアプリ", url: "https://ny-note.vercel.app" },
+        {
+          title: "カードゲーム",
+          url: "https://ny-wk-git-codex-add-card-game-transition-button-oqibav-ny1.vercel.app",
+        },
+        { title: "スト6", url: "https://ai-colab-six.vercel.app/" },
+      ];
       const listEl = document.getElementById("url-list");
       const emptyEl = document.getElementById("empty");
       const formEl = document.getElementById("url-form");
@@ -101,10 +109,12 @@
       const urlInputEl = document.getElementById("url");
 
       function loadItems() {
+        const defaultItems = DEFAULT_ITEMS.map((item) => ({ ...item }));
+
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
           if (!raw) {
-            return [];
+            return defaultItems;
           }
 
           const parsed = JSON.parse(raw);
@@ -118,9 +128,9 @@
             return [parsed];
           }
 
-          return [];
+          return defaultItems;
         } catch {
-          return [];
+          return defaultItems;
         }
       }
 
