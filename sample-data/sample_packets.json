@@ -1,0 +1,30 @@
+[
+  {
+    "timestamp": "2026-04-08T10:00:00.000Z",
+    "srcIp": "10.8.0.2",
+    "dstIp": "142.250.185.46",
+    "srcPort": 54321,
+    "dstPort": 443,
+    "protocol": "TLS",
+    "bytes": 4096,
+    "direction": "outbound",
+    "hostName": "www.google.com",
+    "tlsSni": "www.google.com",
+    "dnsQuery": null,
+    "rawJson": "{\"frame.time_epoch\":[\"1744106400.000000000\"],\"ip.src\":[\"10.8.0.2\"],\"ip.dst\":[\"142.250.185.46\"],\"tcp.srcport\":[\"54321\"],\"tcp.dstport\":[\"443\"],\"_ws.col.Protocol\":[\"TLSv1.3\"],\"frame.len\":[\"4096\"],\"tls.handshake.extensions_server_name\":[\"www.google.com\"]}"
+  },
+  {
+    "timestamp": "2026-04-08T10:00:05.000Z",
+    "srcIp": "10.8.0.2",
+    "dstIp": "8.8.8.8",
+    "srcPort": 53421,
+    "dstPort": 53,
+    "protocol": "DNS",
+    "bytes": 72,
+    "direction": "outbound",
+    "hostName": "api.github.com",
+    "tlsSni": null,
+    "dnsQuery": "api.github.com",
+    "rawJson": "{\"frame.time_epoch\":[\"1744106405.000000000\"],\"ip.src\":[\"10.8.0.2\"],\"ip.dst\":[\"8.8.8.8\"],\"udp.srcport\":[\"53421\"],\"udp.dstport\":[\"53\"],\"_ws.col.Protocol\":[\"DNS\"],\"frame.len\":[\"72\"],\"dns.qry.name\":[\"api.github.com\"]}"
+  }
+]

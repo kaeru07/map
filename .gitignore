@@ -1,0 +1,13 @@
+# SQLite databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# キャプチャ生データ
+/raw/
+/capture/
+/var/
+
+# macOS
+.DS_Store

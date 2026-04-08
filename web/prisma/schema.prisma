@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Packet {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime
+  srcIp     String
+  dstIp     String
+  srcPort   Int?
+  dstPort   Int?
+  protocol  String
+  bytes     Int?
+  direction String?
+  hostName  String?
+  tlsSni    String?
+  dnsQuery  String?
+  rawJson   String?
+  createdAt DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([protocol])
+  @@index([srcIp])
+  @@index([dstIp])
+}
