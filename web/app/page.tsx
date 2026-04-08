@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-
+// / は next.config.ts の redirects() で /packets に転送される
 export default function Home() {
-  redirect("/packets");
+  return null;
 }
