@@ -1,7 +1,7 @@
 -- CreateTable
 CREATE TABLE "Packet" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "timestamp" DATETIME NOT NULL,
+    "id" SERIAL NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL,
     "srcIp" TEXT NOT NULL,
     "dstIp" TEXT NOT NULL,
     "srcPort" INTEGER,
@@ -13,7 +13,9 @@ CREATE TABLE "Packet" (
     "tlsSni" TEXT,
     "dnsQuery" TEXT,
     "rawJson" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Packet_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -27,3 +29,6 @@ CREATE INDEX "Packet_srcIp_idx" ON "Packet"("srcIp");
 
 -- CreateIndex
 CREATE INDEX "Packet_dstIp_idx" ON "Packet"("dstIp");
+
+-- CreateIndex
+CREATE INDEX "Packet_dstPort_idx" ON "Packet"("dstPort");

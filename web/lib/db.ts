@@ -1,32 +1,23 @@
 import { PrismaClient } from "@/app/generated/prisma/client";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import path from "path";
-
-function getDbUrl(): string {
-  const raw = process.env.DATABASE_URL ?? "";
-  if (!raw) return "";
-  if (raw.startsWith("file:./")) {
-    const rel = raw.replace("file:./", "");
-    return `file:${path.resolve(process.cwd(), rel)}`;
-  }
-  return raw;
-}
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
 /**
- * DBへの接続が期待できない環境かどうか。
- * - DATABASE_URL 未設定
- * - Vercel上でローカルファイルURL (file:...) を参照している場合
+ * DATABASE_URL が未設定のときは demo mode。
+ * - API routes は isDemoMode() を確認してから prisma を呼ぶこと
+ * - demo mode では sample-data.ts のデータを返す
  */
 export function isDemoMode(): boolean {
-  const url = getDbUrl();
-  if (!url) return true;
-  if (process.env.VERCEL && url.startsWith("file:")) return true;
-  return false;
+  return !process.env.DATABASE_URL;
 }
 
-function createPrisma() {
-  const url = getDbUrl() || "file::memory:";
-  const adapter = new PrismaLibSql({ url });
+function createPrisma(): PrismaClient {
+  // isDemoMode() = true のとき prisma は呼ばれない。
+  // URL が未設定でも Pool 生成は安全（接続は query 時にのみ発生）。
+  const connectionString =
+    process.env.DATABASE_URL ?? "postgresql://localhost:5432/netscope_placeholder";
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
 }
 
