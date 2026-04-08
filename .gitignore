@@ -11,3 +11,11 @@
 
 # macOS
 .DS_Store
+
+# クローンディレクトリ (git clone で作成される)
+/netscope/
+
+# キャプチャデータ
+/data/raw/
+/data/imported/
+/logs/

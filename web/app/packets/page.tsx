@@ -15,8 +15,10 @@ export default function PacketsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Packet | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -27,6 +29,7 @@ export default function PacketsPage() {
       abortRef.current = ctrl;
 
       setLoading(true);
+      setError(null);
       try {
         const params = new URLSearchParams();
         params.set("page", String(p));
@@ -42,11 +45,17 @@ export default function PacketsPage() {
         const res = await fetch(`/api/packets?${params}`, {
           signal: ctrl.signal,
         });
+        if (!res.ok) {
+          throw new Error(`サーバーエラー: ${res.status} ${res.statusText}`);
+        }
         const data: PacketsResponse = await res.json();
         setPackets(data.packets);
         setTotal(data.total);
+        setLastUpdated(new Date());
       } catch (e: unknown) {
-        if (e instanceof Error && e.name !== "AbortError") console.error(e);
+        if (e instanceof Error && e.name !== "AbortError") {
+          setError(e.message || "データの取得に失敗しました");
+        }
       } finally {
         setLoading(false);
       }
@@ -66,6 +75,10 @@ export default function PacketsPage() {
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
+  function fmtTime(d: Date) {
+    return d.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {/* Stats */}
@@ -74,22 +87,55 @@ export default function PacketsPage() {
       {/* Filter + Refresh */}
       <div className="flex items-start gap-2">
         <div className="flex-1">
-          <FilterBar filters={filters} onChange={setFilters} />
+          <FilterBar filters={filters} onChange={(f) => { setFilters(f); setSelected(null); }} />
         </div>
-        <button
-          onClick={() => setRefreshKey((k) => k + 1)}
-          className="shrink-0 rounded border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors mt-0"
-          title="最新データに更新"
-        >
-          ↻ 更新
-        </button>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <button
+            onClick={() => setRefreshKey((k) => k + 1)}
+            disabled={loading}
+            className="rounded border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 disabled:opacity-50 transition-colors"
+            title="最新データに更新"
+          >
+            {loading ? (
+              <span className="flex items-center gap-1.5">
+                <span className="animate-spin inline-block h-3 w-3 border border-slate-400 border-t-blue-400 rounded-full" />
+                読込中
+              </span>
+            ) : (
+              "↻ 更新"
+            )}
+          </button>
+          {lastUpdated && (
+            <span className="text-xs text-slate-600">
+              最終更新: {fmtTime(lastUpdated)}
+            </span>
+          )}
+        </div>
       </div>
 
+      {/* エラー表示 */}
+      {error && (
+        <div className="rounded-lg border border-red-800 bg-red-950/50 px-4 py-3 text-sm text-red-300">
+          <span className="font-semibold">エラー: </span>{error}
+          <button
+            onClick={() => setRefreshKey((k) => k + 1)}
+            className="ml-3 underline hover:text-red-100"
+          >
+            再試行
+          </button>
+        </div>
+      )}
+
       {/* Count */}
-      <div className="text-xs text-slate-500">
-        {loading ? "読み込み中…" : `${total.toLocaleString()} 件`}
-        {total > PAGE_SIZE && !loading && ` (ページ ${page} / ${totalPages})`}
-      </div>
+      {!error && (
+        <div className="text-xs text-slate-500 h-4">
+          {loading
+            ? ""
+            : total === 0
+            ? "データなし — capture.sh でキャプチャ後に import.sh で取り込んでください"
+            : `${total.toLocaleString()} 件${total > PAGE_SIZE ? ` (ページ ${page} / ${totalPages})` : ""}`}
+        </div>
+      )}
 
       {/* Main: table + detail panel */}
       <div className="flex gap-3">
@@ -106,7 +152,7 @@ export default function PacketsPage() {
             loading={loading}
           />
           {/* Pagination */}
-          {totalPages > 1 && (
+          {totalPages > 1 && !loading && (
             <div className="flex items-center justify-between px-4 py-2 border-t border-slate-800 text-sm text-slate-400">
               <button
                 disabled={page <= 1}
