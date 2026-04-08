@@ -19,6 +19,7 @@ export default function PacketsPage() {
   const [selected, setSelected] = useState<Packet | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isDemo, setIsDemo] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -51,6 +52,7 @@ export default function PacketsPage() {
         const data: PacketsResponse = await res.json();
         setPackets(data.packets);
         setTotal(data.total);
+        setIsDemo(!!data.demo);
         setLastUpdated(new Date());
       } catch (e: unknown) {
         if (e instanceof Error && e.name !== "AbortError") {
@@ -112,6 +114,16 @@ export default function PacketsPage() {
           )}
         </div>
       </div>
+
+      {/* デモモードバナー */}
+      {isDemo && (
+        <div className="rounded-lg border border-yellow-700 bg-yellow-950/40 px-4 py-2.5 text-sm text-yellow-300">
+          <span className="font-semibold">⚠ デモモード</span>
+          {" — "}DATABASE_URL 未設定のためサンプルデータを表示中。本番環境では Vercel の Environment Variables に
+          {" "}<code className="font-mono text-yellow-200">DATABASE_URL=libsql://&lt;db&gt;.turso.io?authToken=&lt;token&gt;</code>
+          {" "}を設定してください。
+        </div>
+      )}
 
       {/* エラー表示 */}
       {error && (

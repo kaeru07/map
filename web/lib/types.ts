@@ -30,12 +30,14 @@ export type PacketsResponse = {
   total: number;
   page: number;
   pageSize: number;
+  demo?: boolean;
 };
 
 export type StatsResponse = {
   total: number;
   protocols: string[];
   latestTimestamp: string | null;
+  demo?: boolean;
 };
 
 export const PROTOCOL_COLORS: Record<string, string> = {

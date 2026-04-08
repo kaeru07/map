@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { isDemoMode, prisma } from "@/lib/db";
+import { filterSamplePackets } from "@/lib/sample-data";
 import { Prisma } from "@/app/generated/prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -18,42 +19,58 @@ export async function GET(request: NextRequest) {
   const timeTo = searchParams.get("timeTo");
   const search = searchParams.get("search");
 
-  const where: Prisma.PacketWhereInput = {};
-
-  if (protocol) where.protocol = protocol;
-  if (srcIp) where.srcIp = { contains: srcIp };
-  if (dstIp) where.dstIp = { contains: dstIp };
-  if (dstPort) where.dstPort = parseInt(dstPort, 10);
-  if (timeFrom || timeTo) {
-    where.timestamp = {};
-    if (timeFrom) where.timestamp.gte = new Date(timeFrom);
-    if (timeTo) where.timestamp.lte = new Date(timeTo);
-  }
-  if (search) {
-    where.OR = [
-      { srcIp: { contains: search } },
-      { dstIp: { contains: search } },
-      { hostName: { contains: search } },
-      { tlsSni: { contains: search } },
-      { dnsQuery: { contains: search } },
-    ];
+  if (isDemoMode()) {
+    const { packets, total } = filterSamplePackets({
+      protocol, srcIp, dstIp, dstPort, timeFrom, timeTo, search,
+      page, pageSize,
+    });
+    return Response.json({ packets, total, page, pageSize, demo: true });
   }
 
-  const [packets, total] = await Promise.all([
-    prisma.packet.findMany({
-      where,
-      orderBy: { timestamp: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-    prisma.packet.count({ where }),
-  ]);
+  try {
+    const where: Prisma.PacketWhereInput = {};
 
-  const serialized = packets.map((p) => ({
-    ...p,
-    timestamp: p.timestamp.toISOString(),
-    createdAt: p.createdAt.toISOString(),
-  }));
+    if (protocol) where.protocol = protocol;
+    if (srcIp) where.srcIp = { contains: srcIp };
+    if (dstIp) where.dstIp = { contains: dstIp };
+    if (dstPort) where.dstPort = parseInt(dstPort, 10);
+    if (timeFrom || timeTo) {
+      where.timestamp = {};
+      if (timeFrom) where.timestamp.gte = new Date(timeFrom);
+      if (timeTo) where.timestamp.lte = new Date(timeTo);
+    }
+    if (search) {
+      where.OR = [
+        { srcIp: { contains: search } },
+        { dstIp: { contains: search } },
+        { hostName: { contains: search } },
+        { tlsSni: { contains: search } },
+        { dnsQuery: { contains: search } },
+      ];
+    }
 
-  return Response.json({ packets: serialized, total, page, pageSize });
+    const [packets, total] = await Promise.all([
+      prisma.packet.findMany({
+        where,
+        orderBy: { timestamp: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.packet.count({ where }),
+    ]);
+
+    const serialized = packets.map((p) => ({
+      ...p,
+      timestamp: p.timestamp.toISOString(),
+      createdAt: p.createdAt.toISOString(),
+    }));
+
+    return Response.json({ packets: serialized, total, page, pageSize });
+  } catch {
+    const { packets, total } = filterSamplePackets({
+      protocol, srcIp, dstIp, dstPort, timeFrom, timeTo, search,
+      page, pageSize,
+    });
+    return Response.json({ packets, total, page, pageSize, demo: true });
+  }
 }
