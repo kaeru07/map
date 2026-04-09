@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
       ...p,
       timestamp: p.timestamp.toISOString(),
       createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
     }));
 
     return Response.json({ packets: serialized, total, page, pageSize });

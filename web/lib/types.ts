@@ -1,5 +1,5 @@
 export type Packet = {
-  id: number;
+  id: string;
   timestamp: string; // ISO string
   srcIp: string;
   dstIp: string;
@@ -11,8 +11,9 @@ export type Packet = {
   hostName: string | null;
   tlsSni: string | null;
   dnsQuery: string | null;
-  rawJson: string | null;
+  rawJson: unknown;
   createdAt: string;
+  updatedAt?: string;
 };
 
 export type PacketFilters = {
@@ -38,6 +39,46 @@ export type StatsResponse = {
   protocols: string[];
   latestTimestamp: string | null;
   demo?: boolean;
+};
+
+// ─── VPN ────────────────────────────────────────────────────────────────────
+
+export type VpnClient = {
+  /** WireGuard インターフェース名 (例: wg0) */
+  interface: string;
+  /** VPN IP (例: 10.0.0.2) */
+  ip: string;
+  /** 表示名 (例: iPhone) */
+  name: string;
+  /** エンドポイント (例: 114.48.193.198:61293) or null */
+  endpoint: string | null;
+  /** ハンドシェイク表示 (例: 5 秒前) */
+  handshake: string;
+  /** ハンドシェイク Unix タイムスタンプ */
+  handshakeTs: number;
+  /** 受信量 (人間可読) */
+  rx: string;
+  /** 送信量 (人間可読) */
+  tx: string;
+  /** 直近 3 分以内にハンドシェイクがあれば true */
+  connected: boolean;
+};
+
+export type VpnStatusResponse = {
+  clients: VpnClient[];
+  error?: string;
+};
+
+// ─── VPN ヘルパー ────────────────────────────────────────────────────────────
+
+/** srcIp / dstIp が VPN クライアント IP かどうか判定 */
+export function isVpnIp(ip: string): boolean {
+  return ip.startsWith("10.0.0.") && ip !== "10.0.0.1";
+}
+
+/** VPN IP から表示名を返す (既知の IP のみ) */
+export const VPN_CLIENT_NAMES: Record<string, string> = {
+  "10.0.0.2": "iPhone",
 };
 
 export const PROTOCOL_COLORS: Record<string, string> = {

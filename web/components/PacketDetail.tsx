@@ -22,14 +22,10 @@ function Row({ label, value }: { label: string; value: string | number | null })
 export function PacketDetail({ packet, onClose }: Props) {
   const [tab, setTab] = useState<"detail" | "json">("detail");
 
-  const parsed = (() => {
-    if (!packet.rawJson) return null;
-    try {
-      return JSON.parse(packet.rawJson);
-    } catch {
-      return null;
-    }
-  })();
+  // rawJson は Prisma Json 型 (already parsed object) または null
+  const rawJsonStr = packet.rawJson
+    ? JSON.stringify(packet.rawJson, null, 2)
+    : null;
 
   return (
     <div className="flex flex-col h-full">
@@ -84,9 +80,7 @@ export function PacketDetail({ packet, onClose }: Props) {
           </div>
         ) : (
           <pre className="text-xs text-green-300 font-mono bg-slate-900 rounded p-3 overflow-x-auto whitespace-pre-wrap break-all">
-            {parsed
-              ? JSON.stringify(parsed, null, 2)
-              : packet.rawJson ?? "(rawJson なし)"}
+            {rawJsonStr ?? "(rawJson なし)"}
           </pre>
         )}
       </div>

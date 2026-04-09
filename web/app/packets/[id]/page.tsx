@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { isDemoMode, prisma } from "@/lib/db";
+import { SAMPLE_PACKETS } from "@/lib/sample-data";
 import { ProtocolBadge } from "@/components/ProtocolBadge";
 import Link from "next/link";
 
@@ -9,22 +10,60 @@ export default async function PacketDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const numId = parseInt(id, 10);
-  if (isNaN(numId)) notFound();
 
-  const packet = await prisma.packet.findUnique({ where: { id: numId } });
+  // デモモード: サンプルデータから検索
+  if (isDemoMode()) {
+    const demo = SAMPLE_PACKETS.find((p) => p.id === id);
+    if (!demo) notFound();
+    return <DetailView packet={{ ...demo, rawJson: null }} />;
+  }
+
+  // 本番モード: Prisma で取得
+  let packet;
+  try {
+    packet = await prisma.packet.findUnique({ where: { id } });
+  } catch {
+    notFound();
+  }
   if (!packet) notFound();
 
-  const parsed = (() => {
-    if (!packet.rawJson) return null;
-    try {
-      return JSON.parse(packet.rawJson);
-    } catch {
-      return null;
-    }
-  })();
+  return <DetailView packet={packet} />;
+}
 
-  function Row({ label, value }: { label: string; value: string | number | null }) {
+type ViewPacket = {
+  id: string | number;
+  timestamp: Date | string;
+  protocol: string;
+  srcIp: string;
+  srcPort: number | null;
+  dstIp: string;
+  dstPort: number | null;
+  bytes: number | null;
+  direction: string | null;
+  hostName: string | null;
+  tlsSni: string | null;
+  dnsQuery: string | null;
+  createdAt: Date | string;
+  rawJson: unknown;
+};
+
+function DetailView({ packet }: { packet: ViewPacket }) {
+  const ts =
+    packet.timestamp instanceof Date
+      ? packet.timestamp.toLocaleString("ja-JP")
+      : new Date(packet.timestamp).toLocaleString("ja-JP");
+
+  const createdTs =
+    packet.createdAt instanceof Date
+      ? packet.createdAt.toLocaleString("ja-JP")
+      : new Date(packet.createdAt).toLocaleString("ja-JP");
+
+  // rawJson は Prisma Json 型 (already parsed) または null
+  const rawJsonStr = packet.rawJson
+    ? JSON.stringify(packet.rawJson, null, 2)
+    : null;
+
+  function Row({ label, value }: { label: string; value: string | number | null | undefined }) {
     if (value === null || value === undefined) return null;
     return (
       <div className="flex gap-2 py-2 border-b border-slate-800 last:border-0">
@@ -52,29 +91,29 @@ export default async function PacketDetailPage({
           通信詳細
         </div>
         <div className="p-4">
-          <Row label="ID" value={packet.id} />
-          <Row label="Timestamp" value={packet.timestamp.toLocaleString("ja-JP")} />
+          <Row label="ID" value={String(packet.id)} />
+          <Row label="Timestamp" value={ts} />
           <Row label="Protocol" value={packet.protocol} />
           <Row label="Src IP" value={packet.srcIp} />
           <Row label="Src Port" value={packet.srcPort} />
           <Row label="Dst IP" value={packet.dstIp} />
           <Row label="Dst Port" value={packet.dstPort} />
-          <Row label="Bytes" value={packet.bytes !== null ? `${packet.bytes} bytes` : null} />
+          <Row label="Bytes" value={packet.bytes !== null && packet.bytes !== undefined ? `${packet.bytes} bytes` : null} />
           <Row label="Direction" value={packet.direction} />
           <Row label="Host Name" value={packet.hostName} />
           <Row label="TLS SNI" value={packet.tlsSni} />
           <Row label="DNS Query" value={packet.dnsQuery} />
-          <Row label="Created At" value={packet.createdAt.toLocaleString("ja-JP")} />
+          <Row label="Created At" value={createdTs} />
         </div>
       </div>
 
-      {packet.rawJson && (
+      {rawJsonStr && (
         <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900 overflow-hidden">
           <div className="px-4 py-3 text-xs text-slate-400 uppercase tracking-wider bg-slate-800/60">
             Raw JSON
           </div>
           <pre className="p-4 text-xs text-green-300 font-mono overflow-x-auto whitespace-pre-wrap break-all">
-            {parsed ? JSON.stringify(parsed, null, 2) : packet.rawJson}
+            {rawJsonStr}
           </pre>
         </div>
       )}

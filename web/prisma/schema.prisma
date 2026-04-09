@@ -4,13 +4,16 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
+// packets テーブル
+// - id: cuid() による文字列 ID（URL-safe, 分散安全）
+// - rawJson: JSONB 型（PostgreSQL ネイティブ JSON 圧縮 + インデックス対応）
+// - timestamp: 通信発生時刻（降順クエリが多いため index あり）
+// - updatedAt: Prisma @updatedAt で自動管理
 model Packet {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   timestamp DateTime
   srcIp     String
   dstIp     String
@@ -22,12 +25,18 @@ model Packet {
   hostName  String?
   tlsSni    String?
   dnsQuery  String?
-  rawJson   String?
+  rawJson   Json?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  // 一覧取得は timestamp DESC が主なので最優先
   @@index([timestamp])
+  // protocol フィルタ用
   @@index([protocol])
-  @@index([srcIp])
-  @@index([dstIp])
+  // dstIp + timestamp 複合: 特定宛先の時系列クエリに有効
+  @@index([dstIp, timestamp])
+  // dstPort フィルタ用（443, 53 等）
   @@index([dstPort])
+
+  @@map("packets")
 }

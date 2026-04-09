@@ -7,6 +7,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // migrate / db push は DIRECT_URL (port 5432) を優先使用。
+    // PgBouncer (6543) は DDL 非対応のため直接接続が必要。
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"] ?? "",
   },
 });

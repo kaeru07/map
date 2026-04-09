@@ -1,6 +1,6 @@
 -- CreateTable
-CREATE TABLE "Packet" (
-    "id" SERIAL NOT NULL,
+CREATE TABLE "packets" (
+    "id" TEXT NOT NULL,
     "timestamp" TIMESTAMP(3) NOT NULL,
     "srcIp" TEXT NOT NULL,
     "dstIp" TEXT NOT NULL,
@@ -12,23 +12,21 @@ CREATE TABLE "Packet" (
     "hostName" TEXT,
     "tlsSni" TEXT,
     "dnsQuery" TEXT,
-    "rawJson" TEXT,
+    "rawJson" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Packet_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "packets_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE INDEX "Packet_timestamp_idx" ON "Packet"("timestamp");
+-- CreateIndex: timestamp DESC クエリ用（最重要）
+CREATE INDEX "packets_timestamp_idx" ON "packets"("timestamp");
 
--- CreateIndex
-CREATE INDEX "Packet_protocol_idx" ON "Packet"("protocol");
+-- CreateIndex: protocol フィルタ用
+CREATE INDEX "packets_protocol_idx" ON "packets"("protocol");
 
--- CreateIndex
-CREATE INDEX "Packet_srcIp_idx" ON "Packet"("srcIp");
+-- CreateIndex: 特定宛先の時系列クエリ用（複合）
+CREATE INDEX "packets_dstIp_timestamp_idx" ON "packets"("dstIp", "timestamp");
 
--- CreateIndex
-CREATE INDEX "Packet_dstIp_idx" ON "Packet"("dstIp");
-
--- CreateIndex
-CREATE INDEX "Packet_dstPort_idx" ON "Packet"("dstPort");
+-- CreateIndex: dstPort フィルタ用（443, 53 等）
+CREATE INDEX "packets_dstPort_idx" ON "packets"("dstPort");

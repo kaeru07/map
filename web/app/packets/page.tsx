@@ -6,6 +6,9 @@ import { StatsCards } from "@/components/StatsCards";
 import { FilterBar } from "@/components/FilterBar";
 import { PacketTable } from "@/components/PacketTable";
 import { PacketDetail } from "@/components/PacketDetail";
+import { CaptureControl } from "@/components/CaptureControl";
+import { VpnStatusCard } from "@/components/VpnStatusCard";
+import { isVpnIp } from "@/lib/types";
 
 const PAGE_SIZE = 100;
 
@@ -20,6 +23,7 @@ export default function PacketsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [isDemo, setIsDemo] = useState(false);
+  const [vpnOnly, setVpnOnly] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -75,6 +79,10 @@ export default function PacketsPage() {
     fetchPackets(filters, page);
   }, [page, filters, fetchPackets]);
 
+  const displayPackets = vpnOnly
+    ? packets.filter((p) => isVpnIp(p.srcIp) || isVpnIp(p.dstIp))
+    : packets;
+
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function fmtTime(d: Date) {
@@ -83,13 +91,31 @@ export default function PacketsPage() {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* VPN status */}
+      <VpnStatusCard refreshKey={refreshKey} />
+
+      {/* Capture management UI */}
+      <CaptureControl onRefresh={() => setRefreshKey((k) => k + 1)} />
+
       {/* Stats */}
       <StatsCards refreshKey={refreshKey} />
 
       {/* Filter + Refresh */}
       <div className="flex items-start gap-2">
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col gap-2">
           <FilterBar filters={filters} onChange={(f) => { setFilters(f); setSelected(null); }} />
+          {/* VPN only toggle */}
+          <button
+            onClick={() => setVpnOnly((v) => !v)}
+            className={`self-start inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs font-medium transition-colors ${
+              vpnOnly
+                ? "border-purple-700 bg-purple-950 text-purple-300 hover:bg-purple-900"
+                : "border-slate-600 bg-slate-800 text-slate-400 hover:bg-slate-700"
+            }`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            {vpnOnly ? "VPN通信のみ表示中" : "全通信表示"}
+          </button>
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <button
@@ -158,7 +184,7 @@ export default function PacketsPage() {
           }`}
         >
           <PacketTable
-            packets={packets}
+            packets={displayPackets}
             selectedId={selected?.id ?? null}
             onSelect={(p) => setSelected(p)}
             loading={loading}

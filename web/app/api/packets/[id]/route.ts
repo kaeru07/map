@@ -7,17 +7,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const numId = parseInt(id, 10);
 
   if (isDemoMode()) {
-    const packet = SAMPLE_PACKETS.find((p) => p.id === numId);
+    const packet = SAMPLE_PACKETS.find((p) => p.id === id);
     if (!packet) return Response.json({ error: "Not found" }, { status: 404 });
     return Response.json({ ...packet, demo: true });
   }
 
   try {
     const packet = await prisma.packet.findUnique({
-      where: { id: numId },
+      where: { id },
     });
 
     if (!packet) {
@@ -28,6 +27,7 @@ export async function GET(
       ...packet,
       timestamp: packet.timestamp.toISOString(),
       createdAt: packet.createdAt.toISOString(),
+      updatedAt: packet.updatedAt.toISOString(),
     });
   } catch {
     return Response.json(

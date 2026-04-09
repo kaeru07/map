@@ -1,7 +1,17 @@
 "use client";
 
-import { Packet } from "@/lib/types";
+import { Packet, isVpnIp, VPN_CLIENT_NAMES } from "@/lib/types";
 import { ProtocolBadge } from "./ProtocolBadge";
+
+function VpnLabel({ ip }: { ip: string }) {
+  if (!isVpnIp(ip)) return null;
+  const name = VPN_CLIENT_NAMES[ip];
+  return (
+    <span className="inline-flex items-center rounded px-1 py-0.5 text-[10px] font-medium bg-purple-950 border border-purple-700 text-purple-300 leading-none mr-1">
+      VPN{name ? ` ${name}` : ""}
+    </span>
+  );
+}
 
 function shortIp(ip: string) {
   return ip;
@@ -26,7 +36,7 @@ function fmtTime(iso: string) {
 
 type Props = {
   packets: Packet[];
-  selectedId: number | null;
+  selectedId: string | null;
   onSelect: (p: Packet) => void;
   loading?: boolean;
 };
@@ -79,12 +89,14 @@ export function PacketTable({ packets, selectedId, onSelect, loading }: Props) {
                 <ProtocolBadge protocol={p.protocol} />
               </td>
               <td className="py-1.5 px-3 font-mono text-slate-300 whitespace-nowrap">
+                <VpnLabel ip={p.srcIp} />
                 <span>{shortIp(p.srcIp)}</span>
                 {p.srcPort && (
                   <span className="text-slate-500">:{p.srcPort}</span>
                 )}
               </td>
               <td className="py-1.5 px-3 font-mono text-slate-300 whitespace-nowrap">
+                <VpnLabel ip={p.dstIp} />
                 <span>{shortIp(p.dstIp)}</span>
                 {p.dstPort && (
                   <span className="text-slate-500">:{p.dstPort}</span>
