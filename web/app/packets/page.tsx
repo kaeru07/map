@@ -86,36 +86,25 @@ export default function PacketsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   function fmtTime(d: Date) {
-    return d.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+    return d.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   }
 
   return (
-    <div className="flex flex-col gap-2 md:gap-3">
-      {/* VPN status — collapsed by default on mobile */}
+    <div className="flex flex-col gap-3">
+      {/* VPN status */}
       <VpnStatusCard refreshKey={refreshKey} />
 
-      {/* Capture control — collapsed by default on mobile */}
+      {/* Capture management UI */}
       <CaptureControl onRefresh={() => setRefreshKey((k) => k + 1)} />
 
       {/* Stats */}
       <StatsCards refreshKey={refreshKey} />
 
-      {/* Filter + Refresh row */}
+      {/* Filter + Refresh */}
       <div className="flex items-start gap-2">
-        {/* Filter bar takes all remaining width */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2">
-          <FilterBar
-            filters={filters}
-            onChange={(f) => {
-              setFilters(f);
-              setSelected(null);
-            }}
-          />
-          {/* VPN-only toggle */}
+        <div className="flex-1 flex flex-col gap-2">
+          <FilterBar filters={filters} onChange={(f) => { setFilters(f); setSelected(null); }} />
+          {/* VPN only toggle */}
           <button
             onClick={() => setVpnOnly((v) => !v)}
             className={`self-start inline-flex items-center gap-1.5 rounded border px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -125,51 +114,46 @@ export default function PacketsPage() {
             }`}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            {vpnOnly ? "VPN通信のみ" : "全通信"}
+            {vpnOnly ? "VPN通信のみ表示中" : "全通信表示"}
           </button>
         </div>
-
-        {/* Refresh button */}
         <div className="flex flex-col items-end gap-1 shrink-0">
           <button
             onClick={() => setRefreshKey((k) => k + 1)}
             disabled={loading}
-            className="rounded border border-slate-600 bg-slate-800 px-3 md:px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 disabled:opacity-50 transition-colors min-h-[36px]"
+            className="rounded border border-slate-600 bg-slate-800 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 disabled:opacity-50 transition-colors"
             title="最新データに更新"
           >
             {loading ? (
               <span className="flex items-center gap-1.5">
                 <span className="animate-spin inline-block h-3 w-3 border border-slate-400 border-t-blue-400 rounded-full" />
-                <span className="hidden sm:inline">読込中</span>
+                読込中
               </span>
             ) : (
               "↻ 更新"
             )}
           </button>
           {lastUpdated && (
-            <span className="text-[10px] text-slate-600">
-              {fmtTime(lastUpdated)}
+            <span className="text-xs text-slate-600">
+              最終更新: {fmtTime(lastUpdated)}
             </span>
           )}
         </div>
       </div>
 
-      {/* Demo mode banner */}
+      {/* デモモードバナー */}
       {isDemo && (
-        <div className="rounded-lg border border-yellow-700 bg-yellow-950/40 px-3 py-2 text-xs md:text-sm text-yellow-300">
+        <div className="rounded-lg border border-yellow-700 bg-yellow-950/40 px-4 py-2.5 text-sm text-yellow-300">
           <span className="font-semibold">⚠ デモモード</span>
-          {" — "}DATABASE_URL 未設定のためサンプルデータを表示中。
-          <span className="hidden sm:inline">
-            本番環境では Vercel の Environment Variables に{" "}
-            <code className="font-mono text-yellow-200">DATABASE_URL</code>{" "}
-            を設定してください。
-          </span>
+          {" — "}DATABASE_URL 未設定のためサンプルデータを表示中。本番環境では Vercel の Environment Variables に
+          {" "}<code className="font-mono text-yellow-200">DATABASE_URL=libsql://&lt;db&gt;.turso.io?authToken=&lt;token&gt;</code>
+          {" "}を設定してください。
         </div>
       )}
 
-      {/* Error */}
+      {/* エラー表示 */}
       {error && (
-        <div className="rounded-lg border border-red-800 bg-red-950/50 px-3 py-2.5 text-sm text-red-300">
+        <div className="rounded-lg border border-red-800 bg-red-950/50 px-4 py-3 text-sm text-red-300">
           <span className="font-semibold">エラー: </span>{error}
           <button
             onClick={() => setRefreshKey((k) => k + 1)}
@@ -186,16 +170,14 @@ export default function PacketsPage() {
           {loading
             ? ""
             : total === 0
-            ? "データなし"
-            : `${total.toLocaleString()} 件${
-                total > PAGE_SIZE ? ` (${page} / ${totalPages} ページ)` : ""
-              }`}
+            ? "データなし — capture.sh でキャプチャ後に import.sh で取り込んでください"
+            : `${total.toLocaleString()} 件${total > PAGE_SIZE ? ` (ページ ${page} / ${totalPages})` : ""}`}
         </div>
       )}
 
-      {/* Main: table/cards + detail panel */}
-      <div className="flex gap-2 md:gap-3">
-        {/* Table / Card list */}
+      {/* Main: table + detail panel */}
+      <div className="flex gap-3">
+        {/* Table */}
         <div
           className={`flex-1 min-w-0 rounded-lg border border-slate-700 bg-slate-900 overflow-hidden transition-all ${
             selected ? "hidden lg:block" : ""
@@ -207,24 +189,23 @@ export default function PacketsPage() {
             onSelect={(p) => setSelected(p)}
             loading={loading}
           />
-
           {/* Pagination */}
           {totalPages > 1 && !loading && (
             <div className="flex items-center justify-between px-4 py-2 border-t border-slate-800 text-sm text-slate-400">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
-                className="disabled:opacity-40 hover:text-slate-100 transition-colors px-2 py-1"
+                className="disabled:opacity-40 hover:text-slate-100 transition-colors"
               >
                 ← 前
               </button>
-              <span className="text-xs">
+              <span>
                 {page} / {totalPages}
               </span>
               <button
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => p + 1)}
-                className="disabled:opacity-40 hover:text-slate-100 transition-colors px-2 py-1"
+                className="disabled:opacity-40 hover:text-slate-100 transition-colors"
               >
                 次 →
               </button>
@@ -232,10 +213,13 @@ export default function PacketsPage() {
           )}
         </div>
 
-        {/* Detail panel: full screen on < lg, side panel on lg+ */}
+        {/* Detail panel */}
         {selected && (
           <div className="w-full lg:w-[420px] shrink-0 rounded-lg border border-slate-700 bg-slate-900 overflow-hidden">
-            <PacketDetail packet={selected} onClose={() => setSelected(null)} />
+            <PacketDetail
+              packet={selected}
+              onClose={() => setSelected(null)}
+            />
           </div>
         )}
       </div>
