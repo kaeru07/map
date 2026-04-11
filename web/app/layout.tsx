@@ -21,22 +21,25 @@ export default function RootLayout({
     <html lang="ja" className={`${geistMono.variable} dark`}>
       <body className="font-mono bg-slate-950 text-slate-100 antialiased min-h-screen">
         <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-          <div className="max-w-screen-2xl mx-auto px-4 h-12 flex items-center gap-4">
+          <div className="max-w-screen-2xl mx-auto px-3 md:px-4 h-10 md:h-12 flex items-center gap-3 md:gap-4">
             <a
               href="/"
-              className="flex items-center gap-2 text-slate-100 font-semibold tracking-tight"
+              className="flex items-center gap-1.5 md:gap-2 text-slate-100 font-semibold tracking-tight"
             >
-              <span className="text-blue-400 text-lg">⬡</span>
-              <span>NetScope</span>
+              <span className="text-blue-400 text-base md:text-lg">⬡</span>
+              <span className="text-sm md:text-base">NetScope</span>
             </a>
-            <nav className="flex gap-4 text-sm text-slate-400">
+            <nav className="flex gap-3 md:gap-4 text-xs md:text-sm text-slate-400">
               <a href="/packets" className="hover:text-slate-100 transition-colors">
                 通信一覧
+              </a>
+              <a href="/attack" className="hover:text-slate-100 transition-colors">
+                攻撃コンソール
               </a>
             </nav>
           </div>
         </header>
-        <main className="max-w-screen-2xl mx-auto px-4 py-4">{children}</main>
+        <main className="max-w-screen-2xl mx-auto px-3 md:px-4 py-3 md:py-4">{children}</main>
       </body>
     </html>
   );

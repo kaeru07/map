@@ -30,14 +30,15 @@ export function PacketDetail({ packet, onClose }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+      <div className="flex items-center justify-between px-3 md:px-4 py-2.5 md:py-3 border-b border-slate-700">
         <div className="flex items-center gap-2">
           <ProtocolBadge protocol={packet.protocol} />
           <span className="text-slate-400 text-sm font-mono">#{packet.id}</span>
         </div>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-slate-100 text-lg leading-none"
+          className="text-slate-400 hover:text-slate-100 text-lg leading-none min-w-[44px] min-h-[44px] flex items-center justify-center -mr-2"
+          aria-label="閉じる"
         >
           ✕
         </button>
@@ -61,7 +62,7 @@ export function PacketDetail({ packet, onClose }: Props) {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-3 md:p-4">
         {tab === "detail" ? (
           <div>
             <Row label="ID" value={packet.id} />

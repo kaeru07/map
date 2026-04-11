@@ -16,7 +16,6 @@ interface Alert {
 }
 
 interface CaptureControlProps {
-  /** インポート成功後に呼ばれるコールバック (一覧・stats 再読込用) */
   onRefresh?: () => void;
 }
 
@@ -35,13 +34,14 @@ export function CaptureControl({ onRefresh }: CaptureControlProps) {
   const [status, setStatus] = useState<CaptureStatus | null>(null);
   const [loading, setLoading] = useState<"start" | "stop" | "import" | "refresh" | null>(null);
   const [alert, setAlert] = useState<Alert | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch("/api/capture/status");
       if (res.ok) setStatus(await res.json());
     } catch {
-      // 状態取得失敗は無視 (サーバー未起動時など)
+      // ignored
     }
   }, []);
 
@@ -119,12 +119,16 @@ export function CaptureControl({ onRefresh }: CaptureControlProps) {
   const busy = loading !== null;
 
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900 p-4">
-      {/* ヘッダー行: タイトル + ステータスバッジ + メタ情報 */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+    <div className="rounded-lg border border-slate-700 bg-slate-900 p-3 md:p-4">
+      {/* Header: title + status badge + collapse toggle */}
+      <button
+        className="w-full flex flex-wrap items-center gap-x-3 gap-y-1 text-left"
+        onClick={() => setCollapsed((v) => !v)}
+        aria-expanded={!collapsed}
+      >
         <span className="text-sm font-semibold text-slate-300">キャプチャ管理</span>
 
-        {/* ステータスバッジ */}
+        {/* Status badge */}
         {status === null ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-slate-500">
             <span className="h-1.5 w-1.5 rounded-full bg-slate-500" />
@@ -142,8 +146,8 @@ export function CaptureControl({ onRefresh }: CaptureControlProps) {
           </span>
         )}
 
-        {/* 最終時刻メタ情報 */}
-        <div className="flex flex-wrap gap-3 text-xs text-slate-500 ml-auto">
+        {/* Meta timestamps — hidden on mobile to save space */}
+        <div className="hidden sm:flex flex-wrap gap-3 text-xs text-slate-500 ml-auto">
           <span>
             最終開始:{" "}
             <span className="text-slate-400">{fmtDatetime(status?.lastStartedAt ?? null)}</span>
@@ -153,89 +157,106 @@ export function CaptureControl({ onRefresh }: CaptureControlProps) {
             <span className="text-slate-400">{fmtDatetime(status?.lastImportedAt ?? null)}</span>
           </span>
         </div>
-      </div>
 
-      {/* ボタン行 */}
-      <div className="flex flex-wrap gap-2">
-        {/* 開始 */}
-        <button
-          onClick={handleStart}
-          disabled={isRunning || busy}
-          className="inline-flex items-center gap-1.5 rounded border border-green-700 bg-green-950 px-4 py-2.5 text-sm font-medium text-green-300 hover:bg-green-900 active:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40 transition-colors min-h-[44px]"
-        >
-          {loading === "start" ? (
-            <Spinner className="border-green-500 border-t-green-200" />
-          ) : (
-            <span aria-hidden>▶</span>
+        <span className="ml-auto sm:ml-0 text-slate-600 text-[10px]">{collapsed ? "▼" : "▲"}</span>
+      </button>
+
+      {/* Collapsible body */}
+      {!collapsed && (
+        <>
+          {/* Button grid: 2×2 on mobile, row on desktop */}
+          <div className="mt-3 grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+            <button
+              onClick={handleStart}
+              disabled={isRunning || busy}
+              className="inline-flex items-center justify-center gap-1.5 rounded border border-green-700 bg-green-950 px-3 py-2.5 text-sm font-medium text-green-300 hover:bg-green-900 active:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40 transition-colors min-h-[44px]"
+            >
+              {loading === "start" ? (
+                <Spinner className="border-green-500 border-t-green-200" />
+              ) : (
+                <span aria-hidden>▶</span>
+              )}
+              開始
+            </button>
+
+            <button
+              onClick={handleStop}
+              disabled={!isRunning || busy}
+              className="inline-flex items-center justify-center gap-1.5 rounded border border-red-700 bg-red-950 px-3 py-2.5 text-sm font-medium text-red-300 hover:bg-red-900 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-40 transition-colors min-h-[44px]"
+            >
+              {loading === "stop" ? (
+                <Spinner className="border-red-500 border-t-red-200" />
+              ) : (
+                <span aria-hidden>■</span>
+              )}
+              停止
+            </button>
+
+            <button
+              onClick={handleImport}
+              disabled={busy}
+              className="inline-flex items-center justify-center gap-1.5 rounded border border-blue-700 bg-blue-950 px-3 py-2.5 text-sm font-medium text-blue-300 hover:bg-blue-900 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-40 transition-colors min-h-[44px]"
+            >
+              {loading === "import" ? (
+                <Spinner className="border-blue-500 border-t-blue-200" />
+              ) : (
+                <span aria-hidden>↓</span>
+              )}
+              インポート
+            </button>
+
+            <button
+              onClick={handleRefresh}
+              disabled={busy}
+              className="inline-flex items-center justify-center gap-1.5 rounded border border-slate-600 bg-slate-800 px-3 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700 active:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40 transition-colors min-h-[44px]"
+            >
+              {loading === "refresh" ? (
+                <Spinner className="border-slate-500 border-t-slate-200" />
+              ) : (
+                <span aria-hidden>↻</span>
+              )}
+              状態更新
+            </button>
+          </div>
+
+          {/* Meta timestamps on mobile (inside collapsed body) */}
+          {status && (
+            <div className="sm:hidden mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+              <span>
+                最終開始:{" "}
+                <span className="text-slate-400">{fmtDatetime(status.lastStartedAt)}</span>
+              </span>
+              <span>
+                最終インポート:{" "}
+                <span className="text-slate-400">{fmtDatetime(status.lastImportedAt)}</span>
+              </span>
+            </div>
           )}
-          開始
-        </button>
 
-        {/* 停止 */}
-        <button
-          onClick={handleStop}
-          disabled={!isRunning || busy}
-          className="inline-flex items-center gap-1.5 rounded border border-red-700 bg-red-950 px-4 py-2.5 text-sm font-medium text-red-300 hover:bg-red-900 active:bg-red-800 disabled:cursor-not-allowed disabled:opacity-40 transition-colors min-h-[44px]"
-        >
-          {loading === "stop" ? (
-            <Spinner className="border-red-500 border-t-red-200" />
-          ) : (
-            <span aria-hidden>■</span>
+          {/* Alert */}
+          {alert && (
+            <div
+              className={`mt-3 flex items-start justify-between gap-2 rounded px-3 py-2.5 text-sm ${
+                alert.type === "success"
+                  ? "border border-green-800 bg-green-950/50 text-green-300"
+                  : "border border-red-800 bg-red-950/50 text-red-300"
+              }`}
+              role="alert"
+            >
+              <span>
+                {alert.type === "success" ? "✓ " : "✗ "}
+                {alert.message}
+              </span>
+              <button
+                onClick={() => setAlert(null)}
+                aria-label="閉じる"
+                className="shrink-0 text-lg leading-none opacity-60 hover:opacity-100 transition-opacity"
+              >
+                ×
+              </button>
+            </div>
           )}
-          停止
-        </button>
-
-        {/* インポート */}
-        <button
-          onClick={handleImport}
-          disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded border border-blue-700 bg-blue-950 px-4 py-2.5 text-sm font-medium text-blue-300 hover:bg-blue-900 active:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-40 transition-colors min-h-[44px]"
-        >
-          {loading === "import" ? (
-            <Spinner className="border-blue-500 border-t-blue-200" />
-          ) : (
-            <span aria-hidden>↓</span>
-          )}
-          インポート
-        </button>
-
-        {/* 状態更新 */}
-        <button
-          onClick={handleRefresh}
-          disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded border border-slate-600 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700 active:bg-slate-600 disabled:cursor-not-allowed disabled:opacity-40 transition-colors min-h-[44px]"
-        >
-          {loading === "refresh" ? (
-            <Spinner className="border-slate-500 border-t-slate-200" />
-          ) : (
-            <span aria-hidden>↻</span>
-          )}
-          状態更新
-        </button>
-      </div>
-
-      {/* 結果アラート (dismiss 可能) */}
-      {alert && (
-        <div
-          className={`mt-3 flex items-start justify-between gap-2 rounded px-3 py-2.5 text-sm ${
-            alert.type === "success"
-              ? "border border-green-800 bg-green-950/50 text-green-300"
-              : "border border-red-800 bg-red-950/50 text-red-300"
-          }`}
-          role="alert"
-        >
-          <span>
-            {alert.type === "success" ? "✓ " : "✗ "}
-            {alert.message}
-          </span>
-          <button
-            onClick={() => setAlert(null)}
-            aria-label="閉じる"
-            className="shrink-0 text-lg leading-none opacity-60 hover:opacity-100 transition-opacity"
-          >
-            ×
-          </button>
-        </div>
+        </>
       )}
     </div>
   );
