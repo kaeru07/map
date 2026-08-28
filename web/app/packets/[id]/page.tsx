@@ -47,6 +47,16 @@ type ViewPacket = {
   rawJson: unknown;
 };
 
+function Row({ label, value }: { label: string; value: string | number | null | undefined }) {
+  if (value === null || value === undefined) return null;
+  return (
+    <div className="flex gap-2 py-2 border-b border-slate-800 last:border-0">
+      <span className="text-slate-500 text-xs w-32 shrink-0 pt-0.5">{label}</span>
+      <span className="text-slate-200 font-mono text-sm break-all">{String(value)}</span>
+    </div>
+  );
+}
+
 function DetailView({ packet }: { packet: ViewPacket }) {
   const ts =
     packet.timestamp instanceof Date
@@ -62,16 +72,6 @@ function DetailView({ packet }: { packet: ViewPacket }) {
   const rawJsonStr = packet.rawJson
     ? JSON.stringify(packet.rawJson, null, 2)
     : null;
-
-  function Row({ label, value }: { label: string; value: string | number | null | undefined }) {
-    if (value === null || value === undefined) return null;
-    return (
-      <div className="flex gap-2 py-2 border-b border-slate-800 last:border-0">
-        <span className="text-slate-500 text-xs w-32 shrink-0 pt-0.5">{label}</span>
-        <span className="text-slate-200 font-mono text-sm break-all">{String(value)}</span>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-3xl">

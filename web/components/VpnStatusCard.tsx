@@ -22,7 +22,6 @@ export function VpnStatusCard({ refreshKey }: { refreshKey: number }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
     fetch("/api/vpn/status")
       .then((r) => r.json())
       .then((d: VpnStatusResponse) => setData(d))

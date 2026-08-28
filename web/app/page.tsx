@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { GuamTripApp } from "@/components/GuamTripApp";
 
 export default function Home() {
-  redirect("/packets");
+  return <GuamTripApp />;
 }

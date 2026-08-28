@@ -1,6 +1,11 @@
-import type { Metadata } from "next";
-import { Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -8,36 +13,32 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NetScope — 通信可視化",
-  description: "WireGuard VPN 経由の通信メタ情報ビューア",
+  title: "Guam Trip Map",
+  description: "The Tsubaki Tower起点のグアム旅行インタラクティブ地図",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Guam Map",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="ja" className={`${geistMono.variable} dark`}>
-      <body className="font-mono bg-slate-950 text-slate-100 antialiased min-h-screen">
-        <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-          <div className="max-w-screen-2xl mx-auto px-4 h-12 flex items-center gap-4">
-            <a
-              href="/"
-              className="flex items-center gap-2 text-slate-100 font-semibold tracking-tight"
-            >
-              <span className="text-blue-400 text-lg">⬡</span>
-              <span>NetScope</span>
-            </a>
-            <nav className="flex gap-4 text-sm text-slate-400">
-              <a href="/packets" className="hover:text-slate-100 transition-colors">
-                通信一覧
-              </a>
-            </nav>
-          </div>
-        </header>
-        <main className="max-w-screen-2xl mx-auto px-4 py-4">{children}</main>
-      </body>
+    <html lang="ja" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body>{children}</body>
     </html>
   );
 }
+
