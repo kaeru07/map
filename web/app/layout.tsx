@@ -33,6 +33,10 @@ export default function RootLayout({
               <a href="/packets" className="hover:text-slate-100 transition-colors">
                 通信一覧
               </a>
+              <a href="/compare" className="hover:text-slate-100 transition-colors flex items-center gap-1">
+                <span className="text-blue-400 text-xs">⇄</span>
+                比較モード
+              </a>
             </nav>
           </div>
         </header>
