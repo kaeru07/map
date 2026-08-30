@@ -11,11 +11,14 @@ const IMPORT_SCRIPT = "/root/map/scripts/import.sh";
 const RAW_DIR = "/root/map/data/raw";
 const WORK_DIR = "/root/map";
 
-/** data/raw/ 配下で最新の capture_*.json を返す */
+/** data/raw/ 配下で最新の capture_*.json または capture_*.pcap を返す */
 function findLatestCaptureFile(): string | null {
   try {
     const entries = fs.readdirSync(RAW_DIR)
-      .filter((f) => f.startsWith("capture_") && f.endsWith(".json"))
+      .filter((f) => {
+        if (!f.startsWith("capture_")) return false;
+        return f.endsWith(".json") || f.endsWith(".pcap");
+      })
       .map((f) => {
         const full = path.join(RAW_DIR, f);
         return { full, mtime: fs.statSync(full).mtimeMs };

@@ -103,22 +103,61 @@ if [[ $USE_TSHARK -eq 1 ]]; then
   TSHARK_ARGS=(
     -i "$IFACE"
     -T json
+    # 基本フレーム情報
     -e frame.time_epoch
+    -e frame.interface_name
+    -e frame.len
+    # IP (IPv4 / IPv6)
     -e ip.src
     -e ip.dst
+    -e ip.proto
+    -e ip.ttl
+    -e ip.len
     -e ipv6.src
     -e ipv6.dst
+    # ポート (TCP / UDP)
     -e tcp.srcport
     -e tcp.dstport
     -e udp.srcport
     -e udp.dstport
-    -e "_ws.col.Protocol"
-    -e frame.len
+    # プロトコル列 (lowercase が正しい)
+    -e "_ws.col.protocol"
+    # DNS 拡張
     -e dns.qry.name
+    -e dns.qry.type
+    -e dns.a
+    -e dns.aaaa
+    -e dns.cname
+    # ── TCP 詳細 (v4拡張) ──────────────────────────────────────
+    -e tcp.flags           # フラグ全体 (hex)
+    -e tcp.flags.syn       # SYN ビット (0/1)
+    -e tcp.flags.fin       # FIN ビット (0/1)
+    -e tcp.flags.reset     # RST ビット (0/1)
+    -e tcp.flags.push      # PSH ビット (0/1)
+    -e tcp.flags.ack       # ACK ビット (0/1)
+    -e tcp.seq             # シーケンス番号 (フロー確認用)
+    -e tcp.stream          # ストリーム ID (tshark が自動付与)
+    # ── UDP 詳細 ────────────────────────────────────────────────
+    -e udp.length
+    -e udp.stream          # UDPストリーム ID
+    # ── IP 詳細 ─────────────────────────────────────────────────
+    # (ip.proto / ip.ttl / ip.len は上の IP セクションに移動済み)
+    # ── TLS / QUIC (v4拡張) ─────────────────────────────────────
     -e "tls.handshake.extensions_server_name"
+    -e tls.record.version
+    -e tls.handshake.ciphersuite
+    -e tls.handshake.type
+    -e tls.handshake.session_id   # TLS セッション ID
+    # QUIC (tshark 3.6+ で取得可能、未対応バージョンでは無視される)
+    -e quic.connection_id
+    -e quic.version
+    # HTTP
     -e http.host
     -e http.request.method
     -e http.request.uri
+    -e http.response.code
+    -e http.content_length
+    -e http.content_type
   )
 
   if [[ -n "$MAX_PACKETS" ]]; then

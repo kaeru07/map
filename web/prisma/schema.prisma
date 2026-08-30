@@ -29,14 +29,70 @@ model Packet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // 一覧取得は timestamp DESC が主なので最優先
+  // ── 拡張フィールド (v2) ──────────────────────────────────────────────────
+  /// キャプチャ インターフェース (wg0, eth0 など)
+  iface      String?
+  /// DNS クエリ種別 (A, AAAA, HTTPS, PTR, MX, CNAME など)
+  dnsType    String?
+  /// DNS レスポンスデータ (カンマ区切り IP / ホスト名)
+  dnsResp    String?
+  /// TLS バージョン (TLSv1.2, TLSv1.3)
+  tlsVersion String?
+  /// HTTP メソッド (GET, POST, PUT など)
+  httpMethod String?
+  /// HTTP リクエストパス (/path?query)
+  httpPath   String?
+
+  // ── 拡張フィールド (v3) ──────────────────────────────────────────────────
+  /// トランスポートプロトコル (TCP / UDP / ICMP / SCTP)
+  transportProto String?
+  /// TCP フラグ文字列 (SYN, ACK, FIN,ACK, RST など)
+  tcpFlags       String?
+  /// UDP データグラム長 (ヘッダ + ペイロード)
+  udpLength      Int?
+  /// TLS 暗号スイート名 (TLS_AES_128_GCM_SHA256 など)
+  tlsCipher      String?
+  /// TLS ハンドシェイク種別 (ClientHello / ServerHello など)
+  tlsHandshake   String?
+  /// HTTP レスポンスステータスコード (200, 404 など)
+  httpStatus     Int?
+  /// IP TTL 値
+  ipTtl          Int?
+  /// IP データグラム長 (IP ヘッダ + ペイロード)
+  ipLen          Int?
+  /// キャプチャセッション識別子 (ファイル名タイムスタンプ部分)
+  captureSession String?
+
+  // ── 拡張フィールド (v4) ──────────────────────────────────────────────────
+  /// セッション開始からの相対時刻 [秒] (タイムライン精度向上)
+  relativeTime   Float?
+  /// TCP SYN フラグ (接続開始検出)
+  tcpSyn         Boolean?
+  /// TCP FIN フラグ (接続終了検出)
+  tcpFin         Boolean?
+  /// TCP RST フラグ (接続リセット検出)
+  tcpRst         Boolean?
+  /// QUIC 候補フラグ (UDP + port 443)
+  isQuicCandidate Boolean?
+  /// QUIC フロー識別子 (connection_id or 5-tuple hash)
+  quicFlowId     String?
+  /// TLS セッション ID (ClientHello から取得)
+  tlsSessionId   String?
+  /// 簡易フロー ID (同一 5-tuple × 5 秒以内をまとめる)
+  flowId         String?
+
+  // ── インデックス ─────────────────────────────────────────────────────────
   @@index([timestamp])
-  // protocol フィルタ用
   @@index([protocol])
-  // dstIp + timestamp 複合: 特定宛先の時系列クエリに有効
   @@index([dstIp, timestamp])
-  // dstPort フィルタ用（443, 53 等）
   @@index([dstPort])
+  @@index([iface])
+  @@index([dnsType])
+  @@index([transportProto])
+  @@index([captureSession])
+  @@index([tlsCipher])
+  @@index([flowId])
+  @@index([isQuicCandidate])
 
   @@map("packets")
 }
