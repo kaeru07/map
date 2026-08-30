@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
   const pageSize = Math.min(
-    200,
+    5000,
     Math.max(1, parseInt(searchParams.get("pageSize") ?? "100", 10))
   );
   const protocol = searchParams.get("protocol");
@@ -19,12 +19,17 @@ export async function GET(request: NextRequest) {
   const timeTo = searchParams.get("timeTo");
   const search = searchParams.get("search");
 
+  // 環境変数未設定 → デモモード
   if (isDemoMode()) {
     const { packets, total } = filterSamplePackets({
       protocol, srcIp, dstIp, dstPort, timeFrom, timeTo, search,
       page, pageSize,
     });
-    return Response.json({ packets, total, page, pageSize, demo: true });
+    return Response.json({
+      packets, total, page, pageSize,
+      demo: true,
+      demoReason: "no_db_config", // DIRECT_URL / DATABASE_URL が未設定
+    });
   }
 
   try {
@@ -41,11 +46,13 @@ export async function GET(request: NextRequest) {
     }
     if (search) {
       where.OR = [
-        { srcIp: { contains: search } },
-        { dstIp: { contains: search } },
-        { hostName: { contains: search } },
-        { tlsSni: { contains: search } },
-        { dnsQuery: { contains: search } },
+        { srcIp:      { contains: search } },
+        { dstIp:      { contains: search } },
+        { hostName:   { contains: search } },
+        { tlsSni:     { contains: search } },
+        { dnsQuery:   { contains: search } },
+        { dnsResp:    { contains: search } },
+        { httpPath:   { contains: search } },
       ];
     }
 
@@ -67,11 +74,21 @@ export async function GET(request: NextRequest) {
     }));
 
     return Response.json({ packets: serialized, total, page, pageSize });
-  } catch {
+
+  } catch (err) {
+    // DB 接続エラー → サンプルデータでフォールバック
+    const reason = err instanceof Error ? err.message : String(err);
+    console.error("[packets API] DB error, falling back to sample data:", reason);
+
     const { packets, total } = filterSamplePackets({
       protocol, srcIp, dstIp, dstPort, timeFrom, timeTo, search,
       page, pageSize,
     });
-    return Response.json({ packets, total, page, pageSize, demo: true });
+    return Response.json({
+      packets, total, page, pageSize,
+      demo: true,
+      demoReason: "db_error",  // DB 接続失敗
+      demoError: reason,        // エラーの詳細（デバッグ用）
+    });
   }
 }
